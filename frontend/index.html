@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 FLOWER_CLASSIFIER v2.0 - Live</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-matrix"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span class="bracket">[</span>
+                    <span class="title-text">FLOWER_CLASSIFIER</span>
+                    <span class="bracket">]</span>
+                </h1>
+                <div class="version">v2.0 | Live Camera + Neural Network</div>
+                <div class="status-bar">
+                    <span class="status-indicator online"></span>
+                    <span class="status-text">SYSTEM ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Terminal -->
+        <main class="main-content">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-title">root@classifier:~$ FLOWER_NEURAL_NETWORK_LIVE</div>
+                    <div class="terminal-controls">
+                        <span class="control-btn minimize"></span>
+                        <span class="control-btn maximize"></span>
+                        <span class="control-btn close"></span>
+                    </div>
+                </div>
+
+                <div class="terminal-body">
+                    <!-- Tab Navigation -->
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="camera">
+                            <span class="tab-icon">📹</span> LIVE CAMERA
+                        </button>
+                        <button class="tab-btn" data-tab="upload">
+                            <span class="tab-icon">📤</span> UPLOAD IMAGE
+                        </button>
+                    </div>
+
+                    <!-- Command Log -->
+                    <div class="command-log" id="commandLog">
+                        <div class="log-line">
+                            <span class="prefix">user@classifier:~$</span>
+                            <span class="text">Initializing Flower Classification Framework v2.0...</span>
+                        </div>
+                        <div class="log-line">
+                            <span class="prefix">system:</span>
+                            <span class="text success">✓ Model loaded successfully</span>
+                        </div>
+                        <div class="log-line">
+                            <span class="prefix">system:</span>
+                            <span class="text success">✓ API connection established</span>
+                        </div>
+                        <div class="log-line">
+                            <span class="prefix">system:</span>
+                            <span class="text success">✓ Camera support enabled</span>
+                        </div>
+                        <div class="log-line">
+                            <span class="prefix">system:</span>
+                            <span class="text">Ready for input. Select mode and begin...</span>
+                        </div>
+                    </div>
+
+                    <!-- CAMERA TAB -->
+                    <div class="tab-content active" id="camera-tab">
+                        <div class="command-prompt">
+                            <span class="prefix">user@classifier:~$</span>
+                            <span class="command">initialize_camera --stream live</span>
+                        </div>
+
+                        <div class="camera-section">
+                            <div class="camera-container">
+                                <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+                                <canvas id="captureCanvas" class="capture-canvas" style="display: none;"></canvas>
+                                <div class="camera-overlay"></div>
+                                <div class="camera-indicator" id="cameraIndicator">
+                                    <span class="indicator-dot"></span>
+                                    <span class="indicator-text">CAMERA READY</span>
+                                </div>
+                            </div>
+
+                            <div class="camera-controls">
+                                <button class="btn btn-primary" id="startCameraBtn">
+                                    <span class="btn-text">Start Camera</span>
+                                    <span class="btn-icon">▶</span>
+                                </button>
+                                <button class="btn btn-primary" id="stopCameraBtn" style="display: none;">
+                                    <span class="btn-text">Stop Camera</span>
+                                    <span class="btn-icon">⏹</span>
+                                </button>
+                                <button class="btn btn-secondary" id="autoDetectToggle">
+                                    <span class="btn-text">Auto Detect: OFF</span>
+                                    <span class="btn-icon">🔄</span>
+                                </button>
+                                <button class="btn btn-secondary" id="captureFrameBtn" style="display: none;">
+                                    <span class="btn-text">Capture Frame</span>
+                                    <span class="btn-icon">📸</span>
+                                </button>
+                            </div>
+
+                            <div class="camera-settings">
+                                <label class="setting-item">
+                                    <span class="setting-label">Detection Interval:</span>
+                                    <input type="range" id="detectionInterval" min="500" max="3000" step="500" value="1000" class="setting-slider">
+                                    <span class="setting-value" id="intervalValue">1s</span>
+                                </label>
+                                <label class="setting-item">
+                                    <span class="setting-label">Confidence Threshold:</span>
+                                    <input type="range" id="confidenceThreshold" min="0.3" max="0.95" step="0.05" value="0.5" class="setting-slider">
+                                    <span class="setting-value" id="thresholdValue">50%</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UPLOAD TAB -->
+                    <div class="tab-content" id="upload-tab">
+                        <div class="command-prompt">
+                            <span class="prefix">user@classifier:~$</span>
+                            <span class="command">upload_image --file</span>
+                        </div>
+
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📤</div>
+                            <p class="upload-text">Drag image here or click to upload</p>
+                            <p class="upload-hint">Supported: JPG, PNG, GIF, BMP (Max 16MB)</p>
+                            <input type="file" id="fileInput" accept="image/*" hidden>
+                        </div>
+
+                        <button class="btn btn-primary" id="predictBtn" style="display: none;">
+                            <span class="btn-text">Execute Prediction</span>
+                            <span class="btn-icon">▶</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div class="loading-container" id="loadingContainer" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">
+                            <div class="loading-line">Processing flower specimen...</div>
+                            <div class="loading-line">Analyzing morphological features...</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div class="results-section" id="resultsSection" style="display: none;">
+                        <div class="result-header">
+                            <span class="prefix">system:</span>
+                            <span class="text success">✓ Classification Complete</span>
+                        </div>
+
+                        <div class="prediction-box">
+                            <div class="prediction-label">IDENTIFIED SPECIMEN:</div>
+                            <div class="prediction-flower" id="predictionFlower">---</div>
+                            <div class="confidence-display">
+                                <span class="confidence-label">CONFIDENCE LEVEL:</span>
+                                <span class="confidence-value" id="confidenceValue">0%</span>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top 3 Predictions -->
+                        <div class="top-predictions">
+                            <div class="predictions-label">TOP 3 PREDICTIONS:</div>
+                            <table class="predictions-table" id="predictionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>RANK</th>
+                                        <th>FLOWER SPECIES</th>
+                                        <th>PROBABILITY</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="predictionsBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Metadata -->
+                        <div class="metadata">
+                            <div class="meta-item">
+                                <span class="meta-label">Processing Time:</span>
+                                <span class="meta-value" id="processingTime">0ms</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Model Version:</span>
+                                <span class="meta-value">2.0</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Detection Mode:</span>
+                                <span class="meta-value" id="detectionMode">Manual</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Section -->
+                    <div class="error-section" id="errorSection" style="display: none;">
+                        <div class="error-message" id="errorMessage"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="clearBtn">
+                            <span class="btn-text">Clear & Reset</span>
+                            <span class="btn-icon">↻</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <span class="footer-label">Status:</span>
+                    <span class="footer-value" id="footerStatus">ACTIVE</span>
+                </div>
+                <div class="footer-section">
+                    <span class="footer-label">Mode:</span>
+                    <span class="footer-value" id="footerMode">STANDBY</span>
+                </div>
+                <div class="footer-section">
+                    <span class="footer-label">FPS:</span>
+                    <span class="footer-value" id="footerFPS">0</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
