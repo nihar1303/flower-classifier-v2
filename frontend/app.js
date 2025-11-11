@@ -1,9 +1,14 @@
 /**
  * FLOWER CLASSIFIER v2.0 - Live Camera + Upload
  * Real-time Detection and Predictions
+ *
+ * NOTES:
+ * - Uses window.location.origin for API base so it works when frontend is served by Flask.
+ * - Calls backend endpoints under /api/* to match backend routes.
+ * - Uses top_5 from backend response and 'probability' field.
  */
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = window.location.origin; // works when frontend is served from Flask (same origin)
 let selectedFile = null;
 let processingTime = 0;
 let cameraStream = null;
@@ -97,8 +102,8 @@ async function startCamera() {
 
         // Setup canvas
         cameraVideo.onloadedmetadata = () => {
-            captureCanvas.width = cameraVideo.videoWidth;
-            captureCanvas.height = cameraVideo.videoHeight;
+            captureCanvas.width = cameraVideo.videoWidth || 640;
+            captureCanvas.height = cameraVideo.videoHeight || 480;
         };
 
     } catch (error) {
@@ -164,7 +169,7 @@ async function captureAndPredict(mode) {
     try {
         // Draw to canvas
         const ctx = captureCanvas.getContext('2d');
-        ctx.drawImage(cameraVideo, 0, 0);
+        ctx.drawImage(cameraVideo, 0, 0, captureCanvas.width, captureCanvas.height);
 
         // Convert to blob
         captureCanvas.toBlob(async (blob) => {
@@ -251,7 +256,8 @@ async function predictFromFile(file, mode) {
 
         addLog('prediction', `Executing neural network (${mode})...`, 'command');
 
-        const response = await fetch(`${API_BASE_URL}/predict`, {
+        // Use backend endpoint /api/predict (matches backend)
+        const response = await fetch(`${API_BASE_URL}/api/predict`, {
             method: 'POST',
             body: formData
         });
@@ -259,28 +265,38 @@ async function predictFromFile(file, mode) {
         processingTime = Date.now() - startTime;
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Prediction failed');
+            // Try to parse JSON error, otherwise use text
+            let errorText = 'Prediction failed';
+            try {
+                const errorData = await response.json();
+                errorText = errorData.error || JSON.stringify(errorData);
+            } catch (e) {
+                errorText = await response.text();
+            }
+            throw new Error(errorText);
         }
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (!result.success || !result.prediction) {
             throw new Error(result.error || 'Prediction failed');
         }
 
-        // Check confidence threshold
-        if (result.prediction.confidence < threshold && mode === 'auto') {
+        // result.prediction comes from backend
+        const prediction = result.prediction;
+
+        // Check confidence threshold for auto mode
+        if (prediction.confidence < threshold && mode === 'auto') {
             loadingContainer.style.display = 'none';
             return; // Skip low confidence auto detections
         }
 
-        displayResults(result.prediction, mode);
-        addLog('prediction', `Classification complete - ${result.prediction.flower}`, 'success');
+        displayResults(prediction, mode);
+        addLog('prediction', `Classification complete - ${prediction.flower}`, 'success');
 
     } catch (error) {
         showError(error.message || 'Prediction failed');
-        addLog('error', error.message, 'error');
+        addLog('error', error.message || 'Prediction failed', 'error');
     } finally {
         loadingContainer.style.display = 'none';
     }
@@ -291,26 +307,29 @@ async function predictFromFile(file, mode) {
 function displayResults(prediction, mode) {
     detectionModeElement.textContent = mode === 'auto' ? 'Auto' : 'Manual';
 
-    predictionFlower.textContent = prediction.flower.toUpperCase();
+    predictionFlower.textContent = (prediction.flower || '').toUpperCase();
 
-    const confidence = Math.round(prediction.confidence * 100);
+    const confidence = Math.round((prediction.confidence || 0) * 100);
     confidenceValue.textContent = confidence + '%';
     confidenceFill.style.width = confidence + '%';
 
     predictionsBody.innerHTML = '';
-    prediction.top_3.forEach((pred, index) => {
-        const percentage = Math.round(pred.probability * 100);
+
+    // backend returns top_5 list with { flower, probability } entries
+    const topList = prediction.top_5 || prediction.top5 || [];
+    topList.slice(0, 5).forEach((pred, index) => {
+        const percentage = Math.round((pred.probability || 0) * 100);
         const row = `
             <tr>
                 <td>${index + 1}</td>
-                <td>${pred.flower.toUpperCase()}</td>
+                <td>${(pred.flower || '').toUpperCase()}</td>
                 <td>${percentage}%</td>
             </tr>
         `;
         predictionsBody.innerHTML += row;
     });
 
-    processingTimeElement.textContent = processingTime + 'ms';
+    processingTimeElement.textContent = (processingTime || 0) + 'ms';
     resultsSection.style.display = 'flex';
 
     confidenceFill.style.width = '0%';
@@ -388,12 +407,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function checkAPIHealth() {
     try {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const response = await fetch(`${API_BASE_URL}/api/health`);
         if (response.ok) {
             addLog('health', 'API connection established', 'success');
+        } else {
+            addLog('health', `API returned ${response.status}`, 'error');
         }
     } catch (error) {
-        addLog('health', `Cannot connect to API. Make sure Flask server is running.`);
+        addLog('health', `Cannot connect to API. Make sure Flask server is running. (${error.message})`, 'error');
+        showError('Cannot connect to backend API. Start the Flask server and ensure frontend is served from the same origin.');
     }
 }
 

@@ -72,7 +72,7 @@ def main():
 
     print("Loading dataset...")
     try:
-        dataset = datasets.ImageFolder('data/flowers', transform=transform)
+        dataset = datasets.ImageFolder('../data/flowers', transform=transform)
         print(f"✓ Dataset loaded: {len(dataset)} images")
     except FileNotFoundError:
         print("✗ Dataset not found at data/flowers/")
